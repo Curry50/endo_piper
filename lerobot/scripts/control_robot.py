@@ -127,6 +127,11 @@ from dataclasses import asdict
 from pprint import pformat
 
 # from safetensors.torch import load_file, save_file
+# import sys
+# sys.path.append('/home/zzx/文档/lerobot_piper')
+# sys.path.append('/home/zzx/文档/lerobot_piper/lerobot/common')
+# print(sys.path)
+
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.common.policies.factory import make_policy
 from lerobot.common.robot_devices.control_configs import (

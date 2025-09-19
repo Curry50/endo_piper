@@ -2,6 +2,7 @@ import time
 from typing import Dict
 from piper_sdk import *
 from lerobot.common.robot_devices.motors.configs import PiperMotorsBusConfig
+import serial
 
 class PiperMotorsBus:
     """
@@ -11,11 +12,26 @@ class PiperMotorsBus:
                  config: PiperMotorsBusConfig):
         self.piper = C_PiperInterface_V2(config.can_name)
         self.piper.ConnectPort()
+
+        self.piper.ArmParamEnquiryAndConfig(0, 0, 0, 0xAE, 2) # 0xFC
+
         self.motors = config.motors
-        self.init_joint_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # [6 joints + 1 gripper] * 0.0
-        self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.52, 0.0, 0.0]
         self.pose_factor = 1000 # 单位 0.001mm
         self.joint_factor = 57324.840764 # 1000*180/3.14， rad -> 度（单位0.001度）
+
+        # self.init_joint_position = [-2.669/self.joint_factor*self.pose_factor, 108.282/self.joint_factor*self.pose_factor, 
+        #                             -100.841/self.joint_factor*self.pose_factor, -9.786/self.joint_factor*self.pose_factor, 
+        #                             65.472/self.joint_factor*self.pose_factor, -65.200/self.joint_factor*self.pose_factor, 0.0] # [6 joints + 1 gripper] * 0.0
+        self.init_joint_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        # self.init_position = [409.855,-33.193,
+        #                     307.207,-155.978,
+        #                     0.058,-115.125]
+        # self.disable_position = [60.0,1.0,
+        #                          214.0,0.000,
+        #                          85.0,0.000]
+        self.advance_port = "/dev/ttyUSB1"
+        self.advance_serial = serial.Serial(self.advance_port, 115200, timeout=0.3)
 
     @property
     def motor_names(self) -> list[str]:
@@ -53,12 +69,12 @@ class PiperMotorsBus:
             if(enable):
                 enable_flag = all(enable_list)
                 self.piper.EnableArm(7)
-                self.piper.GripperCtrl(0,1000,0x01, 0)
+                # self.piper.GripperCtrl(0,1000,0x01, 0)
             else:
                 # move to safe disconnect position
                 enable_flag = any(enable_list)
                 self.piper.DisableArm(7)
-                self.piper.GripperCtrl(0,1000,0x02, 0)
+                # self.piper.GripperCtrl(0,1000,0x02, 0)
             print(f"使能状态: {enable_flag}")
             print(f"--------------------")
             if(enable_flag == enable):
@@ -93,7 +109,7 @@ class PiperMotorsBus:
         """
         self.write(target_joint=self.init_joint_position)
 
-    def write(self, target_joint:list):
+    def write(self,target_joint:list=None):
         """
             Joint control
             - target joint: in radians
@@ -105,19 +121,26 @@ class PiperMotorsBus:
                 joint_6 (float): 关节6角度 -90000~90000 / 57324.840764
                 gripper_range: 夹爪角度 0~0.08
         """
-        joint_0 = round(target_joint[0]*self.joint_factor)
-        joint_1 = round(target_joint[1]*self.joint_factor)
-        joint_2 = round(target_joint[2]*self.joint_factor)
-        joint_3 = round(target_joint[3]*self.joint_factor)
-        joint_4 = round(target_joint[4]*self.joint_factor)
-        joint_5 = round(target_joint[5]*self.joint_factor)
-        gripper_range = round(target_joint[6]*1000*1000)
 
-        self.piper.MotionCtrl_2(0x01, 0x01, 100, 0x00) # joint control
-        self.piper.JointCtrl(joint_0, joint_1, joint_2, joint_3, joint_4, joint_5)
-        self.piper.GripperCtrl(abs(gripper_range), 1000, 0x01, 0) # 单位 0.001°
-    
+        joint_1 = round(target_joint[0]*self.joint_factor)
+        joint_2 = round(target_joint[1]*self.joint_factor)
+        joint_3 = round(target_joint[2]*self.joint_factor)
+        joint_4 = round(target_joint[3]*self.joint_factor)
+        joint_5 = round(target_joint[4]*self.joint_factor)
+        joint_6 = round(target_joint[5]*self.joint_factor)
+        self.piper.MotionCtrl_2(0x01, 0x01, 100, 0x00)
+        self.piper.JointCtrl(joint_1, joint_2, joint_3, joint_4, joint_5, joint_6)
 
+                # 串口发送数据进行递送
+        if self.advance_serial.isOpen():
+            try:
+                send_data = f"{int(target_joint[6])}"
+                self.advance_serial.write(send_data.encode('utf-8'))
+            except Exception as e:
+                print(f"串口发送数据失败: {e}")
+        else:
+            print("advance serial port is not open")
+        
     def read(self) -> Dict:
         """
             - 机械臂关节消息,单位0.001度
@@ -125,18 +148,14 @@ class PiperMotorsBus:
         """
         joint_msg = self.piper.GetArmJointMsgs()
         joint_state = joint_msg.joint_state
-
-        gripper_msg = self.piper.GetArmGripperMsgs()
-        gripper_state = gripper_msg.gripper_state
         
         return {
-            "joint_1": joint_state.joint_1,
-            "joint_2": joint_state.joint_2,
-            "joint_3": joint_state.joint_3,
-            "joint_4": joint_state.joint_4,
-            "joint_5": joint_state.joint_5,
-            "joint_6": joint_state.joint_6,
-            "gripper": gripper_state.grippers_angle
+            "joint1": joint_state.joint_1,
+            "joint2": joint_state.joint_2,
+            "joint3": joint_state.joint_3,
+            "joint4": joint_state.joint_4,
+            "joint5": joint_state.joint_5,
+            "joint6": joint_state.joint_6,
         }
     
     def safe_disconnect(self):

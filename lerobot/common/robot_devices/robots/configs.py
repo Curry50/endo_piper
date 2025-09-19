@@ -608,7 +608,7 @@ class PiperRobotConfig(RobotConfig):
     follower_arm: dict[str, MotorsBusConfig] = field(
         default_factory=lambda: {
             "main": PiperMotorsBusConfig(
-                can_name="can0",
+                can_name="can_piper",
                 motors={
                     # name: (index, model)
                     "joint_1": [1, "agilex_piper"],
@@ -617,7 +617,7 @@ class PiperRobotConfig(RobotConfig):
                     "joint_4": [4, "agilex_piper"],
                     "joint_5": [5, "agilex_piper"],
                     "joint_6": [6, "agilex_piper"],
-                    "gripper": (7, "agilex_piper"),
+                    # "gripper": (7, "agilex_piper"),
                 },
             ),
         }
@@ -626,13 +626,13 @@ class PiperRobotConfig(RobotConfig):
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {
             "one": OpenCVCameraConfig(
-                camera_index=0,
+                camera_index=2,
                 fps=30,
                 width=640,
                 height=480,
             ),
             "two": OpenCVCameraConfig(
-                camera_index=2,
+                camera_index=4,
                 fps=30,
                 width=640,
                 height=480,

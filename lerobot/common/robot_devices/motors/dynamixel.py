@@ -335,6 +335,7 @@ class DynamixelMotorsBus:
             )
             raise
 
+        self.port_handler.setBaudRate(57600)
         # Allow to read and write
         self.is_connected = True
 

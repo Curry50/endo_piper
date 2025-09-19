@@ -32,11 +32,11 @@ def enable_fun(piper:C_PiperInterface_V2, enable:bool):
         if(enable):
             enable_flag = all(enable_list)
             piper.EnableArm(7)
-            piper.GripperCtrl(0,1000,0x01, 0)
+            # piper.GripperCtrl(0,1000,0x01, 0)
         else:
             enable_flag = any(enable_list)
             piper.DisableArm(7)
-            piper.GripperCtrl(0,1000,0x02, 0)
+            # piper.GripperCtrl(0,1000,0x02, 0)
         print(f"使能状态: {enable_flag}")
         print(f"--------------------")
         if(enable_flag == enable):

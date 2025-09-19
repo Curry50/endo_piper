@@ -6,8 +6,10 @@ import time
 import torch
 import numpy as np
 from dataclasses import dataclass, field, replace
+import serial
 
 from lerobot.common.robot_devices.teleop.gamepad import SixAxisArmController
+from lerobot.common.robot_devices.teleop.gello import GelloArmController
 from lerobot.common.robot_devices.motors.utils import get_motor_names, make_motors_buses_from_configs
 from lerobot.common.robot_devices.cameras.utils import make_cameras_from_configs
 from lerobot.common.robot_devices.utils import RobotDeviceAlreadyConnectedError, RobotDeviceNotConnectedError
@@ -31,7 +33,8 @@ class PiperRobot:
         
         # build gamepad teleop
         if not self.inference_time:
-            self.teleop = SixAxisArmController()
+            # self.teleop = SixAxisArmController()
+            self.teleop = GelloArmController()
         else:
             self.teleop = None
         
@@ -108,8 +111,8 @@ class PiperRobot:
 
         # disconnect piper
         self.arm.safe_disconnect()
-        print("piper disable after 5 seconds")
-        time.sleep(5)
+        print("piper disable after 3 seconds")
+        time.sleep(3)
         self.arm.connect(enable=False)
 
         # disconnect cameras
@@ -125,9 +128,9 @@ class PiperRobot:
         if not self.is_connected:
             raise ConnectionError()
         
-        self.arm.apply_calibration()
+        self.arm.apply_calibration() # 移动到初始姿态
         if not self.inference_time:
-            self.teleop.reset()
+            self.teleop.reset() # 初始末端位置
 
 
 
@@ -138,18 +141,20 @@ class PiperRobot:
             raise ConnectionError()
         
         if self.teleop is None and self.inference_time:
-            self.teleop = SixAxisArmController()
+            # self.teleop = SixAxisArmController()
+            self.teleop = GelloArmController()
 
         # read target pose state as 
         before_read_t = time.perf_counter()
         state = self.arm.read() # read current joint position from robot
-        action = self.teleop.get_action() # target joint position from gamepad
+        action = self.teleop.get_action() # target position from gello
         self.logs["read_pos_dt_s"] = time.perf_counter() - before_read_t
 
         # do action
         before_write_t = time.perf_counter()
-        target_joints = list(action.values())
-        self.arm.write(target_joints)
+        target_joint = list(action.values())
+        self.arm.write(target_joint=target_joint) # write target position to robot
+
         self.logs["write_pos_dt_s"] = time.perf_counter() - before_write_t
 
         if not record_data:
@@ -186,8 +191,8 @@ class PiperRobot:
             )
 
         # send to motors, torch to list
-        target_joints = action.tolist()
-        self.arm.write(target_joints)
+        target_position = action.tolist()
+        self.arm.write(target_position=target_position)
 
         return action
 

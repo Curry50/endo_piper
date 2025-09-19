@@ -18,27 +18,37 @@ class SixAxisArmController:
         self.joystick.init()
         
         # 初始化关节和夹爪状态
+        self.position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 机械臂末端位置 [X, Y, Z, RX, RY, RZ]
         self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节
         self.gripper = 0.0  # 夹爪状态
-        self.speeds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节的速度
+        self.speeds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # 机械臂末端的速度
         self.gripper_speed = 0.0  # 夹爪速度
         
         # 定义关节弧度限制（计算好的范围）
-        self.joint_limits = [
-            (-92000 / 57324.840764, 92000 / 57324.840764),  # joint1
-            (-1300 / 57324.840764, 90000 / 57324.840764),   # joint2
-            (-80000 / 57324.840764, 0 / 57324.840764),   # joint3
-            (-90000 / 57324.840764, 90000 / 57324.840764),  # joint4
-            (-77000 / 57324.840764, 19000 / 57324.840764),  # joint5
-            (-90000 / 57324.840764, 90000 / 57324.840764)   # joint6
+        # self.joint_limits = [
+        #     (-150000 / 57324.840764, 150000 / 57324.840764),  # joint1
+        #     (0 / 57324.840764, 195000 / 57324.840764),   # joint2
+        #     (-175000 / 57324.840764, 0 / 57324.840764),   # joint3
+        #     (-100000 / 57324.840764, 100000 / 57324.840764),  # joint4
+        #     (-75000 / 57324.840764, 75000 / 57324.840764),  # joint5
+        #     (-150000 / 57324.840764, 150000 / 57324.840764)   # joint6
+        # ]
+
+        self.position_limits = [
+            (40.0, 600.0),   # X轴范围
+            (-100.0, 380.0),  # Y轴范围
+            (200.0, 400.0),   # Z轴范围
+            (-170.0, 170.0),    # RX轴范围
+            (-60.0, 90.0),    # RY轴范围
+            (-160.0, 160.0)     # RZ轴范围
         ]
 
         # 启动更新线程
         self.running = True
-        self.thread = threading.Thread(target=self.update_joints)
+        self.thread = threading.Thread(target=self.update_position)
         self.thread.start()
     
-    def update_joints(self):
+    def update_position(self):
         while self.running:
             # 处理事件队列
             try:
@@ -48,7 +58,7 @@ class SixAxisArmController:
                 continue
                 
             # 获取摇杆和按钮输入
-            left_x = -self.joystick.get_axis(0)  # 左摇杆x轴
+            left_x = self.joystick.get_axis(0)  # 左摇杆x轴
             if abs(left_x) < 0.5:
                 left_x = 0.0
 
@@ -56,9 +66,13 @@ class SixAxisArmController:
             if abs(left_y) < 0.5:
                 left_y = 0.0
 
-            right_x = -self.joystick.get_axis(3)  # 右摇杆x轴（取反，因为y轴向下为正）
+            right_x = self.joystick.get_axis(3)  # 右摇杆x轴（取反，因为y轴向下为正）
             if abs(right_x) < 0.5:
                 right_x = 0.0
+            
+            right_y = -self.joystick.get_axis(4)  # 右摇杆y轴（取反，因为y轴向下为正）
+            if abs(right_y) < 0.5:
+                right_y = 0.0
             
             # 获取方向键输入
             hat = self.joystick.get_hat(0)
@@ -74,40 +88,40 @@ class SixAxisArmController:
             square = self.joystick.get_button(3)
             
             # 映射输入到速度
-            self.speeds[0] = left_x * 0.01  # joint1速度
-            self.speeds[1] = left_y * 0.01  # joint2速度
-            self.speeds[2] = 0.01 if triangle else (-0.01 if square else 0.0)  # joint3速度
-            self.speeds[3] = right_x * 0.01  # joint4速度
-            self.speeds[4] = 0.01 if up else (-0.01 if down else 0.0)  # joint5速度
-            self.speeds[5] = 0.01 if right else (-0.01 if left else 0.0)  # joint6速度
-            self.gripper_speed = 0.01 if circle else (-0.01 if cross else 0.0)  # 夹爪速度
+            self.speeds[0] = left_x * 0.3
+            self.speeds[1] = left_y * 0.3
+            self.speeds[2] = right_y * 0.3
+            self.speeds[3] = 0.1 if circle else (-0.1 if cross else 0.0)
+            self.speeds[4] = 0.4 if up else (-0.4 if down else 0.0)
+            self.speeds[5] = 0.6 if right else (-0.6 if left else 0.0)
+            # self.gripper_speed = 0.1 if circle else (-0.1 if cross else 0.0)
             
-            # 积分速度到关节位置
+            # 积分速度到末端位置
             for i in range(6):
-                self.joints[i] += self.speeds[i]
-            self.gripper += self.gripper_speed
+                # self.joints[i] += self.speeds[i]
+                self.position[i] += self.speeds[i]
+            # self.gripper += self.gripper_speed
             
-            # 关节范围保护
+            # 末端位置范围保护
             for i in range(6):
-                min_val, max_val = self.joint_limits[i]
-                self.joints[i] = max(min_val, min(max_val, self.joints[i]))
+                min_val, max_val = self.position_limits[i]
+                self.position[i] = max(min_val, min(max_val, self.position[i]))
             
             # 夹爪范围保护（0~0.08弧度）
-            self.gripper = max(0.0, min(0.08, self.gripper))
+            # self.gripper = max(0.0, min(0.08, self.gripper))
             
             # 控制更新频率
             time.sleep(0.02)
     
     def get_action(self) -> Dict:
-        # 返回机械臂的当前状态
+        # 返回机械臂末端的目标状态
         return {
-            'joint0': self.joints[0],
-            'joint1': self.joints[1],
-            'joint2': self.joints[2],
-            'joint3': self.joints[3],
-            'joint4': self.joints[4],
-            'joint5': self.joints[5],
-            'gripper': self.gripper
+            "X": self.position[0],
+            "Y": self.position[1],
+            "Z": self.position[2],
+            "RX": self.position[3],
+            "RY": self.position[4],
+            "RZ": self.position[5],
         }
     
     def stop(self):
@@ -118,7 +132,13 @@ class SixAxisArmController:
         print("Gamepad exits")
 
     def reset(self):
-        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节
+        # self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节
+        # self.joints = [-2.669/57324.840764*1000, 108.282/57324.840764*1000, 
+        #                 -100.841/57324.840764*1000, -9.786/57324.840764*1000, 
+        #                 65.472/57324.840764*1000, -65.200/57324.840764*1000, 0.0] # [6 joints + 1 gripper] * 0.0
+        self.position = [409.855,-33.193,
+                         307.207,-155.978,
+                         0.058,-115.125]  # 机械臂末端位置 [X, Y, Z, RX, RY, RZ]
         self.gripper = 0.0  # 夹爪状态
         self.speeds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节的速度
         self.gripper_speed = 0.0  # 夹爪速度

@@ -1113,7 +1113,7 @@ class MultiLeRobotDataset(torch.utils.data.Dataset):
 
     @property
     def video(self) -> bool:
-        """Returns True if this dataset loads video frames from mp4 files.
+        """Returns True if this datas video frames from mp4 files.
 
         Returns False if it only loads images from png files.
 

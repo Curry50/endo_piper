@@ -215,7 +215,7 @@ def control_loop(
 ):
     # TODO(rcadene): Add option to record logs
     if not robot.is_connected:
-        robot.connect()
+        robot.connect() # 使能机械臂并移动机械臂到初始位置
 
     if events is None:
         events = {"exit_early": False}
