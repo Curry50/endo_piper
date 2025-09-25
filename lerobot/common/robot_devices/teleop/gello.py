@@ -32,19 +32,19 @@ class GelloArmController:
         self.motors_bus.write("Goal_Position", [0,0,0,0,0,0,3072])  # 初始位置
 
         # 定义关节弧度限制（计算好的范围）
-        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节 + 1个夹爪
+        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]  # 6个关节 + 1个夹爪
         self.joint_limits = [
             (-60000 / 57324.840764, 60000 / 57324.840764),  # joint1
             (0 / 57324.840764, 120000 / 57324.840764),   # joint2
             (-175000 / 57324.840764, 50000 / 57324.840764),   # joint3
             (-100000 / 57324.840764, 100000 / 57324.840764),  # joint4
             (-75000 / 57324.840764, 75000 / 57324.840764),  # joint5
-            (-150000*0 / 57324.840764, 150000*0 / 57324.840764)   # joint6
+            (-250000 / 57324.840764, 250000 / 57324.840764)   # joint6
         ]
 
         self.joint_factor = 1000/57324.840764
         self.last_joints = None
-        self.alpha = 0.95
+        self.alpha = 0.90
 
         # 启动更新线程
         self.running = True
@@ -61,6 +61,7 @@ class GelloArmController:
                 self.joints[2] = self.joint_factor*((self.leader_joints[2]-1024)*(-90)/1024)
                 self.joints[3] = self.joint_factor*((self.leader_joints[3]-2048)*(90)/1024)
                 self.joints[4] = self.joint_factor*((self.leader_joints[4]-2048)*(-90)/1024)
+                self.joints[5] = self.joint_factor*((self.leader_joints[5])*(90)/1024)
 
                 # self.joints[6] = self.joint_factor*((self.leader_joints[6]-2048)*(90)/1024)  # 夹爪
                 self.joints[6] = self.leader_joints[6]
@@ -91,7 +92,7 @@ class GelloArmController:
                 self.joints[6] = self.joints[6]/self.joints[6] + 1  # 保持不动
             
             # 控制更新频率
-            time.sleep(0.005)
+            time.sleep(0.001)
     
     def get_action(self) -> Dict:
         # 返回机械臂末端的目标状态
@@ -113,7 +114,7 @@ class GelloArmController:
         print("gello exits")
 
     def reset(self):
-        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 6个关节
+        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]  # 6个关节
         # self.joints = [-2.669/57324.840764*1000, 108.282/57324.840764*1000, 
         #                 -100.841/57324.840764*1000, -9.786/57324.840764*1000, 
         #                 65.472/57324.840764*1000, -65.200/57324.840764*1000, 0.0]
@@ -121,9 +122,19 @@ class GelloArmController:
 # 使用示例
 if __name__ == "__main__":
     arm_controller = GelloArmController()
+    advance_serial = serial.Serial('/dev/ttyUSB1', 115200, timeout=1)
     try:
         while True:
             print(arm_controller.get_action())
+            target_joint = list(arm_controller.get_action().values())
+            if advance_serial.isOpen():
+                try:
+                    send_data = f"{int(target_joint[6])}"
+                    advance_serial.write(send_data.encode('utf-8'))
+                except Exception as e:
+                    print(f"串口发送数据失败: {e}")
+            else:
+                print("advance serial port is not open")
             time.sleep(0.1)
     except KeyboardInterrupt:
         arm_controller.stop()

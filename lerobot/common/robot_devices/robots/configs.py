@@ -617,7 +617,7 @@ class PiperRobotConfig(RobotConfig):
                     "joint_4": [4, "agilex_piper"],
                     "joint_5": [5, "agilex_piper"],
                     "joint_6": [6, "agilex_piper"],
-                    # "gripper": (7, "agilex_piper"),
+                    # "gripper": [7, "agilex_piper"],
                 },
             ),
         }

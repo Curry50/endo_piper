@@ -61,7 +61,7 @@ class PiperRobot:
         return {
             "action": {
                 "dtype": "float32",
-                "shape": (len(action_names),),
+                "shape": (len(action_names)+1,), # 动作多一个递送机构
                 "names": action_names,
             },
             "observation.state": {
