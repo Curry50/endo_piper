@@ -25,6 +25,9 @@ from termcolor import colored
 from lerobot.common.constants import PRETRAINED_MODEL_DIR
 from lerobot.configs.train import TrainPipelineConfig
 
+os.environ['HTTP_PROXY'] = 'http://127.0.0.1:7890'
+os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7890'
+
 
 def cfg_to_group(cfg: TrainPipelineConfig, return_list: bool = False) -> list[str] | str:
     """Return a group name for logging. Optionally returns group name as list."""
@@ -71,6 +74,9 @@ class WandBLogger:
 
         wandb_run_id = get_wandb_run_id_from_filesystem(self.log_dir) if cfg.resume else None
         wandb.init(
+
+            # mode='offline', # 新增
+            settings=wandb.Settings(init_timeout=120),
             id=wandb_run_id,
             project=self.cfg.project,
             entity=self.cfg.entity,

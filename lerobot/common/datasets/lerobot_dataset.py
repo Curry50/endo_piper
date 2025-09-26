@@ -687,7 +687,7 @@ class LeRobotDataset(torch.utils.data.Dataset):
 
     def _query_hf_dataset(self, query_indices: dict[str, list[int]]) -> dict:
         return {
-            key: torch.stack(self.hf_dataset.select(q_idx)[key])
+            key: torch.stack(list(self.hf_dataset.select(q_idx)[key]))
             for key, q_idx in query_indices.items()
             if key not in self.meta.video_keys
         }
