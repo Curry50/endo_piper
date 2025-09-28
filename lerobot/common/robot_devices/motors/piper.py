@@ -22,14 +22,14 @@ class PiperMotorsBus:
         # self.init_joint_position = [-2.669/self.joint_factor*self.pose_factor, 108.282/self.joint_factor*self.pose_factor, 
         #                             -100.841/self.joint_factor*self.pose_factor, -9.786/self.joint_factor*self.pose_factor, 
         #                             65.472/self.joint_factor*self.pose_factor, -65.200/self.joint_factor*self.pose_factor, 0.0] # [6 joints + 1 gripper] * 0.0
-        self.init_joint_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
+        self.init_joint_position = [-10.628/self.joint_factor*self.pose_factor, 
+                                    97.939/self.joint_factor*self.pose_factor, 
+                                    -78.896/self.joint_factor*self.pose_factor, 
+                                    -2.945/self.joint_factor*self.pose_factor, 
+                                    51.832/self.joint_factor*self.pose_factor, 
+                                    2.020/self.joint_factor*self.pose_factor, 2.0]
         self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
-        # self.init_position = [409.855,-33.193,
-        #                     307.207,-155.978,
-        #                     0.058,-115.125]
-        # self.disable_position = [60.0,1.0,
-        #                          214.0,0.000,
-        #                          85.0,0.000]
+
         self.advance_port = "/dev/ttyUSB1"
         self.advance_serial = serial.Serial(self.advance_port, 115200, timeout=0.3)
 

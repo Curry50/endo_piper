@@ -191,8 +191,8 @@ class PiperRobot:
             )
 
         # send to motors, torch to list
-        target_position = action.tolist()
-        self.arm.write(target_position=target_position)
+        target_joint = action.tolist()
+        self.arm.write(target_joint=target_joint)
 
         return action
 

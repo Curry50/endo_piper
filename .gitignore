@@ -6,6 +6,7 @@ wandb
 # Data
 data
 outputs
+pretrained_model
 
 # Apple
 .DS_Store
