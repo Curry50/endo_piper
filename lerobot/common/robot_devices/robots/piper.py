@@ -128,7 +128,8 @@ class PiperRobot:
         if not self.is_connected:
             raise ConnectionError()
         
-        self.arm.apply_calibration() # 移动到初始姿态
+        if self.inference_time:
+            self.arm.apply_calibration() # 移动到初始姿态
         if not self.inference_time:
             self.teleop.reset() # 初始末端位置
 
