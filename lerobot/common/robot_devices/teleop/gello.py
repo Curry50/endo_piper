@@ -13,7 +13,7 @@ class GelloArmController:
         self.motor_index = [1, 2, 3, 4, 5, 6, 7]
         self.motor_model = "xl330-m288"
         self.gripper_model = "xl330-m077"
-        self.port = "/dev/ttyUSB1"
+        self.port = "/dev/ttyUSB0"
         self.motors = {}
         for i in range(len(self.motor_index)):
             self.motors[self.motor_names[i]] = (self.motor_index[i], self.motor_model)
@@ -122,7 +122,7 @@ class GelloArmController:
 # 使用示例
 if __name__ == "__main__":
     arm_controller = GelloArmController()
-    advance_serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+    advance_serial = serial.Serial('/dev/ttyUSB1', 115200, timeout=1)
     try:
         while True:
             print(arm_controller.get_action())

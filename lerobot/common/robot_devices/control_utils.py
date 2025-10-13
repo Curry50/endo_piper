@@ -236,6 +236,7 @@ def control_loop(
         device = get_safe_torch_device(device)
 
     timestamp = 0
+    advance_state = 2.0 # 初始化递送机构状态
     start_episode_t = time.perf_counter()
     while timestamp < control_time_s:
         start_loop_t = time.perf_counter()
@@ -243,7 +244,7 @@ def control_loop(
         if teleoperate:
             observation, action = robot.teleop_step(record_data=True)
         else:
-            observation = robot.capture_observation()
+            observation = robot.capture_observation(advance_state)
 
             if policy is not None:
                 pred_action = predict_action(observation, policy, device, use_amp)
@@ -251,6 +252,7 @@ def control_loop(
                 # so action actually sent is saved in the dataset.
                 action = robot.send_action(pred_action)
                 action = {"action": action}
+                advance_state = action["action"][6].item()  # 更新递送机构状态
 
         if dataset is not None:
             frame = {**observation, **action, "task": single_task}

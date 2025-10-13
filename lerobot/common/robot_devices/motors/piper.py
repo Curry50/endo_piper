@@ -19,15 +19,15 @@ class PiperMotorsBus:
         self.pose_factor = 1000 # 单位 0.001mm
         self.joint_factor = 57324.840764 # 1000*180/3.14， rad -> 度（单位0.001度）
 
-        self.init_joint_position = [-7.103/self.joint_factor*self.pose_factor, 
-                                    105.532/self.joint_factor*self.pose_factor, 
-                                    -89.896/self.joint_factor*self.pose_factor, 
-                                    -4.945/self.joint_factor*self.pose_factor, 
-                                    70.832/self.joint_factor*self.pose_factor, 
-                                    0.000/self.joint_factor*self.pose_factor, 2.0]
+        self.init_joint_position = [-6.595/self.joint_factor*self.pose_factor, 
+                                    105.877/self.joint_factor*self.pose_factor, 
+                                    -78.377/self.joint_factor*self.pose_factor, 
+                                    -2.360/self.joint_factor*self.pose_factor, 
+                                    63.471/self.joint_factor*self.pose_factor, 
+                                    -6.505/self.joint_factor*self.pose_factor, 2.0]
         self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
 
-        self.advance_port = "/dev/ttyUSB0"
+        self.advance_port = "/dev/ttyUSB1"
         self.advance_serial = serial.Serial(self.advance_port, 115200, timeout=0.3)
 
     @property
@@ -138,7 +138,7 @@ class PiperMotorsBus:
         else:
             print("advance serial port is not open")
         
-    def read(self) -> Dict:
+    def read(self, advance_state) -> Dict:
         """
             - 机械臂关节消息,单位0.001度
             - 机械臂夹爪消息
@@ -153,6 +153,7 @@ class PiperMotorsBus:
             "joint4": joint_state.joint_4,
             "joint5": joint_state.joint_5,
             "joint6": joint_state.joint_6,
+            "advance_state": advance_state
         }
     
     def safe_disconnect(self):

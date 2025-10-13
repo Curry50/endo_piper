@@ -41,6 +41,8 @@ class PiperRobot:
         self.logs = {}
         self.is_connected = False
 
+        self.advance_state = 2.0 # 递送机构初始时刻状态
+
     @property
     def camera_features(self) -> dict:
         cam_ft = {}
@@ -66,7 +68,7 @@ class PiperRobot:
             },
             "observation.state": {
                 "dtype": "float32",
-                "shape": (len(state_names),),
+                "shape": (len(state_names)+1,),
                 "names": state_names,
             },
         }
@@ -147,7 +149,7 @@ class PiperRobot:
 
         # read target pose state as 
         before_read_t = time.perf_counter()
-        state = self.arm.read() # read current joint position from robot
+        state = self.arm.read(advance_state=self.advance_state) # read current joint position from robot
         action = self.teleop.get_action() # target position from gello
         self.logs["read_pos_dt_s"] = time.perf_counter() - before_read_t
 
@@ -155,6 +157,7 @@ class PiperRobot:
         before_write_t = time.perf_counter()
         target_joint = list(action.values())
         self.arm.write(target_joint=target_joint) # write target position to robot
+        self.advance_state = target_joint[6] # 更新递送机构状态
 
         self.logs["write_pos_dt_s"] = time.perf_counter() - before_write_t
 
@@ -199,7 +202,7 @@ class PiperRobot:
 
 
 
-    def capture_observation(self) -> dict:
+    def capture_observation(self,advance_state_infer) -> dict:
         """capture current images and joint positions"""
         if not self.is_connected:
             raise RobotDeviceNotConnectedError(
@@ -208,7 +211,7 @@ class PiperRobot:
         
         # read current joint positions
         before_read_t = time.perf_counter()
-        state = self.arm.read()  # 6 joints + 1 gripper
+        state = self.arm.read(advance_state=advance_state_infer)  # 6 joints + 1 gripper
         self.logs["read_pos_dt_s"] = time.perf_counter() - before_read_t
 
         state = torch.as_tensor(list(state.values()), dtype=torch.float32)
