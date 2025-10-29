@@ -175,7 +175,6 @@ def save_images_from_cameras(
 
     print(f"Images have been saved to {images_dir}")
 
-
 class OpenCVCamera:
     """
     The OpenCVCamera class allows to efficiently record images from cameras. It relies on opencv2 to communicate
@@ -391,6 +390,7 @@ class OpenCVCamera:
         while not self.stop_event.is_set():
             try:
                 self.color_image = self.read()
+
             except Exception as e:
                 print(f"Error reading in thread: {e}")
 
@@ -480,3 +480,67 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     save_images_from_cameras(**vars(args))
+    # import cv2
+
+    # def nothing(x):
+    #     pass
+
+    # # 创建一个黑色图像窗口
+    # cap = cv2.VideoCapture('/home/zzx/Documents/lerobot_piper/data/experiment/videos/chunk-000/observation.images.two/episode_000025.mp4')
+
+    # cv2.namedWindow('image')
+
+
+    # while True:
+    #     ret ,image = cap.read()
+    
+    #     # 设置HSV阈值
+    #     lower = np.array([0, 76, 130])
+    #     upper = np.array([180, 200, 255])
+        
+    #     lower_bgr = np.array([100, 100, 100])
+    #     upper_bgr = np.array([255, 255, 255])
+
+    #     # 将图像转换为HSV
+    #     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        
+    #     # 根据阈值创建掩膜
+    #     mask = cv2.inRange(hsv, lower, upper)
+    #     bgr_thresh = cv2.inRange(image, lower_bgr, upper_bgr)
+        
+    #     kernel = np.ones((3,3), np.uint8)
+    #     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    #     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    #     bgr_thresh = cv2.morphologyEx(bgr_thresh, cv2.MORPH_CLOSE, kernel)
+    #     bgr_thresh = cv2.morphologyEx(bgr_thresh, cv2.MORPH_OPEN, kernel)
+
+    #     plus = cv2.add(mask, bgr_thresh)
+    #     plus = cv2.bitwise_not(plus)
+        
+    #     # 查找轮廓
+    #     contours, _ = cv2.findContours(plus, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+    #     # 绘制检测结果
+    #     result = image.copy()
+    #     for contour in contours:
+    #         # cv2.drawContours(result, [contour], -1, (0, 255, 0), 2)
+    #         rect = cv2.minAreaRect(contour)
+    #         center = (int(rect[0][0]), int(rect[0][1]))
+    #         # cv2.circle(result, center, 3, (255, 0, 0), -1)
+    #         x,y,w,h = cv2.boundingRect(contour)
+    #         # cv2.rectangle(result, (x,y), (x+w, y+h), (0,0,255), 2)
+    #         if 100 < cv2.contourArea(contour) < 400 and w/h < 1/2 :  # 过滤小面积噪声
+    #             cv2.rectangle(result, (x,y), (x+w, y+h), (0,0,255), 2)
+        
+    #     # 显示结果
+    #     cv2.imshow('image', result)
+    #     cv2.imshow('mask', mask)
+    #     cv2.imshow('bgr_thresh', bgr_thresh)
+    #     cv2.imshow('plus', plus)
+        
+    #     # 按ESC键退出
+    #     k = cv2.waitKey(100) & 0xFF
+    #     if k == 27:
+    #         break
+
+    # cv2.destroyAllWindows()

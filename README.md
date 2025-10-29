@@ -125,3 +125,16 @@ python lerobot/scripts/control_robot.py \
     --control.policy.path=outputs/train/act_koch_pick_place_lego/checkpoints/latest/pretrained_model
 ```
 
+python lerobot/scripts/control_robot.py \xperiment \
+    --robot.type=piper \nts/lerobot_piper$ p\
+    --robot.inference_time=false \t.py \ent \
+    --control.type=record \move" \
+    --control.fps=30 \time=false \ periment \
+    --control.single_task="move" \
+    --control.repo_id=${HF_USER}/experiment \
+    --control.num_episodes=20 \" \ 
+    --control.warmup_time_s=15 \/e
+    --control.episode_time_s=40 \
+    --control.reset_time_s=50 \
+    --control.play_sounds=true \
+    --control.push_to_hub=false --control.resume=true

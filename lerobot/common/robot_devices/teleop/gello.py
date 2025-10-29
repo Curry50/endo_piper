@@ -9,7 +9,7 @@ import serial
 class GelloArmController:
     def __init__(self):
         # 初始化Dynamixel舵机
-        self.motor_names = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "gripper"]
+        self.motor_names = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "advance_state"]
         self.motor_index = [1, 2, 3, 4, 5, 6, 7]
         self.motor_model = "xl330-m288"
         self.gripper_model = "xl330-m077"
@@ -49,6 +49,7 @@ class GelloArmController:
         # 启动更新线程
         self.running = True
         self.thread = threading.Thread(target=self.update_joint)
+        self.thread.daemon = True
         self.thread.start()
     
     def update_joint(self):
@@ -85,11 +86,11 @@ class GelloArmController:
                 self.joints[i] = np.round(self.joints[i], 3)
 
             if self.joints[6] < 2900:
-                self.joints[6] = self.joints[6]/self.joints[6]
+                self.joints[6] = 1
             elif self.joints[6] > 3100:
-                self.joints[6] = self.joints[6]-self.joints[6]
+                self.joints[6] = 0
             else:
-                self.joints[6] = self.joints[6]/self.joints[6] + 1  # 保持不动
+                self.joints[6] = 2  # 保持不动
             
             # 控制更新频率
             time.sleep(0.001)
@@ -103,7 +104,7 @@ class GelloArmController:
             "joint4": self.joints[3],
             "joint5": self.joints[4],
             "joint6": self.joints[5],
-            "gripper": self.joints[6],
+            "advance_state": self.joints[6],
         }
     
     def stop(self):
