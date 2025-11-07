@@ -7,6 +7,7 @@ import torch
 import numpy as np
 from dataclasses import dataclass, field, replace
 import serial
+from itertools import chain
 
 from lerobot.common.robot_devices.teleop.gamepad import SixAxisArmController
 from lerobot.common.robot_devices.teleop.gello import GelloArmController
@@ -41,7 +42,7 @@ class PiperRobot:
         self.logs = {}
         self.is_connected = False
 
-        self.advance_state = 2.0 # 递送机构初始时刻状态
+        self.advance_state = [0.,0.,1.] # 递送机构初始时刻状态
 
     @property
     def camera_features(self) -> dict:
@@ -63,12 +64,12 @@ class PiperRobot:
         return {
             "action": {
                 "dtype": "float32",
-                "shape": (len(action_names)+1,), # 动作多一个递送机构
+                "shape": (len(action_names)+3,), # 动作多一个递送机构
                 "names": action_names,
             },
             "observation.state": {
                 "dtype": "float32",
-                "shape": (len(state_names)+1,),
+                "shape": (len(state_names)+3,),
                 "names": state_names,
             },
         }
@@ -147,7 +148,7 @@ class PiperRobot:
             # self.teleop = SixAxisArmController()
             self.teleop = GelloArmController()
 
-        # read target pose state as 
+        # read target pose state
         before_read_t = time.perf_counter()
         state = self.arm.read(advance_state=self.advance_state) # read current joint position from robot
         action = self.teleop.get_action() # target position from gello
@@ -164,8 +165,15 @@ class PiperRobot:
         if not record_data:
             return
         
-        state = torch.as_tensor(list(state.values()), dtype=torch.float32)
-        action = torch.as_tensor(list(action.values()), dtype=torch.float32)
+        state = list(state.values())
+        state_temp = [item if isinstance(item,list) else [item] for item in state]
+        state = list(chain.from_iterable(state_temp)) # flatten list
+        state = torch.as_tensor(state, dtype=torch.float32)
+
+        action = list(action.values())
+        action_temp = [item if isinstance(item,list) else [item] for item in action]
+        action = list(chain.from_iterable(action_temp)) # flatten list
+        action = torch.as_tensor(action, dtype=torch.float32)
 
         # Capture images from cameras
         images = {}
@@ -195,7 +203,8 @@ class PiperRobot:
             )
 
         # send to motors, torch to list
-        target_joint = action.tolist()
+        target_joint_raw = action.tolist()
+        target_joint = target_joint_raw[0:6] + [target_joint_raw[6:9]]  # 拼接递送机构状态
         self.arm.write(target_joint=target_joint)
 
         return action
@@ -214,7 +223,10 @@ class PiperRobot:
         state = self.arm.read(advance_state=advance_state_infer)  # 6 joints + 1 gripper
         self.logs["read_pos_dt_s"] = time.perf_counter() - before_read_t
 
-        state = torch.as_tensor(list(state.values()), dtype=torch.float32)
+        state = list(state.values())
+        state_temp = [item if isinstance(item,list) else [item] for item in state]
+        state = list(chain.from_iterable(state_temp)) # flatten list
+        state = torch.as_tensor(state, dtype=torch.float32)
 
         # read images from cameras
         images = {}

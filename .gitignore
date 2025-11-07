@@ -4,8 +4,7 @@ tmp
 wandb
 
 # Data
-data/experiment/data
-data/experiment/videos
+data
 outputs
 pretrained_model
 pretrained_model_act_1012

@@ -14,6 +14,7 @@ import cv2
 import torch
 from deepdiff import DeepDiff
 from termcolor import colored
+import torch.nn.functional as F
 
 from lerobot.common.datasets.image_writer import safe_stop_image_writer
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
@@ -106,6 +107,12 @@ def predict_action(observation, policy, device, use_amp):
 
         # Remove batch dimension
         action = action.squeeze(0)
+
+        action_advancer = action[6:9]
+        index = torch.argmax(action_advancer, dim=0)
+        action_advancer = F.one_hot(index, num_classes=3).to(torch.float32)
+        action_joints = action[0:6]
+        action = torch.cat([action_joints, action_advancer], dim=0)
 
         # Move to cpu, if not already the case
         action = action.to("cpu")
@@ -236,7 +243,7 @@ def control_loop(
         device = get_safe_torch_device(device)
 
     timestamp = 0
-    advance_state = 2.0 # 初始化递送机构状态
+    advance_state = [0.,0.,1.] # 初始化递送机构状态
     start_episode_t = time.perf_counter()
     while timestamp < control_time_s:
         start_loop_t = time.perf_counter()
@@ -252,7 +259,7 @@ def control_loop(
                 # so action actually sent is saved in the dataset.
                 action = robot.send_action(pred_action)
                 action = {"action": action}
-                advance_state = action["action"][6].item()  # 更新递送机构状态
+                advance_state = action["action"][6:9].tolist()  # 更新递送机构状态
 
         if dataset is not None:
             frame = {**observation, **action, "task": single_task}

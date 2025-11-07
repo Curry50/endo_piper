@@ -32,7 +32,7 @@ class GelloArmController:
         self.motors_bus.write("Goal_Position", [0,0,0,0,0,0,3072])  # 初始位置
 
         # 定义关节弧度限制（计算好的范围）
-        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]  # 6个关节 + 1个夹爪
+        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, [0.,0.,1.]]  # 6个关节 + 1个夹爪
         self.joint_limits = [
             (-60000 / 57324.840764, 60000 / 57324.840764),  # joint1
             (0 / 57324.840764, 120000 / 57324.840764),   # joint2
@@ -71,7 +71,7 @@ class GelloArmController:
                     self.last_joints = self.joints
                 else:
                     # exponential smoothing
-                    for i in range(len(self.joints)):
+                    for i in range(len(self.joints)-1):  # 不平滑夹爪
                         self.joints[i] = self.last_joints[i]*(1-self.alpha) + self.joints[i]*self.alpha
                         self.last_joints[i] = self.joints[i]
 
@@ -86,12 +86,11 @@ class GelloArmController:
                 self.joints[i] = np.round(self.joints[i], 3)
 
             if self.joints[6] < 2900:
-                self.joints[6] = 1
+                self.joints[6] = [0.,1.,0.] # 1
             elif self.joints[6] > 3100:
-                self.joints[6] = 0
+                self.joints[6] = [1.,0.,0.] # 0
             else:
-                self.joints[6] = 2  # 保持不动
-            
+                self.joints[6] = [0.,0.,1.] # 保持不动 2            
             # 控制更新频率
             time.sleep(0.001)
     
@@ -115,7 +114,7 @@ class GelloArmController:
         print("gello exits")
 
     def reset(self):
-        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]  # 6个关节
+        self.joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, [0.,0.,1.]]  # 6个关节
         # self.joints = [-2.669/57324.840764*1000, 108.282/57324.840764*1000, 
         #                 -100.841/57324.840764*1000, -9.786/57324.840764*1000, 
         #                 65.472/57324.840764*1000, -65.200/57324.840764*1000, 0.0]

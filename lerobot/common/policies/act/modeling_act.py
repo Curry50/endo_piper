@@ -145,6 +145,9 @@ class ACTPolicy(PreTrainedPolicy):
         return self._action_queue.popleft()
 
     def forward(self, batch: dict[str, Tensor]) -> tuple[Tensor, dict]:
+
+        advancer_labels = torch.argmax(batch["action"][:,:,6:9],dim=-1)
+
         """Run the batch through the model and compute the loss for training or validation."""
         batch = self.normalize_inputs(batch)
         if self.config.image_features:
@@ -155,11 +158,17 @@ class ACTPolicy(PreTrainedPolicy):
         batch = self.normalize_targets(batch)
         actions_hat, (mu_hat, log_sigma_x2_hat) = self.model(batch)
 
-        l1_loss = (
-            F.l1_loss(batch["action"], actions_hat, reduction="none") * ~batch["action_is_pad"].unsqueeze(-1)
-        ).mean()
+        advancer_loss = F.cross_entropy(actions_hat[:,:,6:9].transpose(1,2),advancer_labels, reduction="none").mean()
+        joint_loss = F.l1_loss(actions_hat[:,:,:6], batch["action"][:,:,:6], reduction="none").mean()
+
+        # l1_loss = (
+        #     F.l1_loss(batch["action"], actions_hat, reduction="none") * ~batch["action_is_pad"].unsqueeze(-1)
+        # ).mean()
+
+        l1_loss = joint_loss + advancer_loss
 
         loss_dict = {"l1_loss": l1_loss.item()}
+        loss_dict["advancer_loss"] = advancer_loss.item()
         if self.config.use_vae:
             # Calculate Dₖₗ(latent_pdf || standard_normal). Note: After computing the KL-divergence for
             # each dimension independently, we sum over the latent dimension to get the total
@@ -381,6 +390,8 @@ class ACT(nn.Module):
         # Final action regression head on the output of the transformer's decoder.
         self.action_head = nn.Linear(config.dim_model, self.config.action_feature.shape[0])
 
+        self.softmax_layer = nn.Softmax(dim=-1)
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -526,8 +537,15 @@ class ACT(nn.Module):
 
         # Move back to (B, S, C).
         decoder_out = decoder_out.transpose(0, 1)
-
         actions = self.action_head(decoder_out)
+
+        joint_actions = actions[:,:,:6]
+        advancer_actions = actions[:,:,6:9]
+
+        # advancer_actions_prob = self.softmax_layer(advancer_actions)
+        # advancer_actions_softmax = torch.argmax(advancer_actions_prob, dim=-1)
+        # advancer_actions_softmax = F.one_hot(advancer_actions_softmax, num_classes=3).to(torch.float32)
+        actions = torch.cat([joint_actions, advancer_actions], dim=-1)
 
         return actions, (mu, log_sigma_x2)
 

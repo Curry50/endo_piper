@@ -3,6 +3,7 @@ from typing import Dict
 from piper_sdk import *
 from lerobot.common.robot_devices.motors.configs import PiperMotorsBusConfig
 import serial
+import numpy as np
 
 class PiperMotorsBus:
     """
@@ -24,8 +25,10 @@ class PiperMotorsBus:
                                     -78.377/self.joint_factor*self.pose_factor, 
                                     -2.360/self.joint_factor*self.pose_factor, 
                                     63.471/self.joint_factor*self.pose_factor, 
-                                    -6.505/self.joint_factor*self.pose_factor, 2.0]
-        self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
+                                    -6.505/self.joint_factor*self.pose_factor, 
+                                    [0. ,0. ,1.]]
+        self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                                      [0. ,0. ,1.]]
 
         self.advance_port = "/dev/ttyUSB1"
         self.advance_serial = serial.Serial(self.advance_port, 115200, timeout=0.3)
@@ -125,13 +128,15 @@ class PiperMotorsBus:
         joint_4 = round(target_joint[3]*self.joint_factor)
         joint_5 = round(target_joint[4]*self.joint_factor)
         joint_6 = round(target_joint[5]*self.joint_factor)
+        advance_state = target_joint[6]  # 递送机构状态
+        send_data = int(np.where(np.array(advance_state) == np.array([1.]))[0]) # 获取递送状态对应的索引
         self.piper.MotionCtrl_2(0x01, 0x01, 100, 0x00)
         self.piper.JointCtrl(joint_1, joint_2, joint_3, joint_4, joint_5, joint_6)
 
                 # 串口发送数据进行递送
         if self.advance_serial.isOpen():
             try:
-                send_data = f"{int(target_joint[6])}"
+                send_data = f"{send_data}"
                 self.advance_serial.write(send_data.encode('utf-8'))
             except Exception as e:
                 print(f"串口发送数据失败: {e}")
