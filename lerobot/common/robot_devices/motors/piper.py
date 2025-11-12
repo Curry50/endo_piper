@@ -19,12 +19,12 @@ class PiperMotorsBus:
         self.pose_factor = 1000 # 单位 0.001mm
         self.joint_factor = 57324.840764 # 1000*180/3.14， rad -> 度（单位0.001度）
 
-        self.init_joint_position = [-6.595/self.joint_factor*self.pose_factor, 
-                                    105.877/self.joint_factor*self.pose_factor, 
-                                    -78.377/self.joint_factor*self.pose_factor, 
-                                    -2.360/self.joint_factor*self.pose_factor, 
-                                    63.471/self.joint_factor*self.pose_factor, 
-                                    -6.505/self.joint_factor*self.pose_factor, 2.0]
+        self.init_joint_position = [-8.876/self.joint_factor*self.pose_factor, 
+                                    97.677/self.joint_factor*self.pose_factor, 
+                                    -65.207/self.joint_factor*self.pose_factor, 
+                                    -4.763/self.joint_factor*self.pose_factor, 
+                                    59.857/self.joint_factor*self.pose_factor, 
+                                    2.207/self.joint_factor*self.pose_factor, 2.0]
         self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0]
 
         self.advance_port = "/dev/ttyUSB1"
