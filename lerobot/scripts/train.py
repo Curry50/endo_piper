@@ -186,6 +186,7 @@ def train(cfg: TrainPipelineConfig):
         pin_memory=device.type != "cpu",
         drop_last=False,
     )
+    
     dl_iter = cycle(dataloader)
 
     policy.train()

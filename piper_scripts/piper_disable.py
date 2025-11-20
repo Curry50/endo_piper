@@ -59,7 +59,7 @@ def enable_fun(piper:C_PiperInterface_V2, enable:bool):
 
 # 测试代码
 if __name__ == "__main__":
-    piper = C_PiperInterface_V2()
+    piper = C_PiperInterface_V2("can_piper")
     piper.ConnectPort()
     import time
     flag = enable_fun(piper=piper, enable=False)
