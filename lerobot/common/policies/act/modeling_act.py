@@ -158,17 +158,17 @@ class ACTPolicy(PreTrainedPolicy):
         batch = self.normalize_targets(batch)
         actions_hat, (mu_hat, log_sigma_x2_hat) = self.model(batch)
 
-        advancer_loss = F.cross_entropy(actions_hat[:,:,6:9].transpose(1,2),advancer_labels, reduction="none").mean()
-        joint_loss = F.l1_loss(actions_hat[:,:,:6], batch["action"][:,:,:6], reduction="none").mean()
+        # advancer_loss = F.cross_entropy(actions_hat[:,:,6:9].transpose(1,2),advancer_labels, reduction="none").mean()
+        # joint_loss = F.l1_loss(actions_hat[:,:,:6], batch["action"][:,:,:6], reduction="none").mean()
 
-        # l1_loss = (
-        #     F.l1_loss(batch["action"], actions_hat, reduction="none") * ~batch["action_is_pad"].unsqueeze(-1)
-        # ).mean()
+        l1_loss = (
+            F.l1_loss(batch["action"], actions_hat, reduction="none") * ~batch["action_is_pad"].unsqueeze(-1)
+        ).mean()
 
-        l1_loss = joint_loss + advancer_loss
+        # l1_loss = joint_loss + advancer_loss
 
         loss_dict = {"l1_loss": l1_loss.item()}
-        loss_dict["advancer_loss"] = advancer_loss.item()
+        # loss_dict["advancer_loss"] = advancer_loss.item()
         if self.config.use_vae:
             # Calculate Dₖₗ(latent_pdf || standard_normal). Note: After computing the KL-divergence for
             # each dimension independently, we sum over the latent dimension to get the total

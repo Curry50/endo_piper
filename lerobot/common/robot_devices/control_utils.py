@@ -108,11 +108,11 @@ def predict_action(observation, policy, device, use_amp):
         # Remove batch dimension
         action = action.squeeze(0)
 
-        action_advancer = action[6:9]
-        index = torch.argmax(action_advancer, dim=0)
-        action_advancer = F.one_hot(index, num_classes=3).to(torch.float32)
-        action_joints = action[0:6]
-        action = torch.cat([action_joints, action_advancer], dim=0)
+        # action_advancer = action[6:9]
+        # index = torch.argmax(action_advancer, dim=0)
+        # action_advancer = F.one_hot(index, num_classes=3).to(torch.float32)
+        # action_joints = action[0:6]
+        # action = torch.cat([action_joints, action_advancer], dim=0)
 
         # Move to cpu, if not already the case
         action = action.to("cpu")
