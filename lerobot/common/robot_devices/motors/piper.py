@@ -30,7 +30,7 @@ class PiperMotorsBus:
         self.safe_disable_position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
                                       [0. ,0. ,1.]]
 
-        self.advance_port = "/dev/ttyUSB1"
+        self.advance_port = "/dev/ttyUSB0"
         self.advance_serial = serial.Serial(self.advance_port, 115200, timeout=0.3)
 
     @property
